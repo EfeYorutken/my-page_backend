@@ -12,10 +12,10 @@ COPY package.json ./
 RUN deno install
 
 # Copy the rest of your source code into the working directory
-COPY src/ ./src/
+COPY ./ ./app
 
 # Expose the internal container port
 EXPOSE 3000
 
 # Run the entrypoint file directly with necessary security permissions flags
-CMD ["run", "--allow-net", "--allow-env", "src/index.ts"]
+CMD ["deno","run", "--allow-net", "--allow-env", ""]
