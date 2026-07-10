@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  ollama-engine:
+    image: ollama/ollama:latest
+    container_name: ollama_core
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_cache:/root/.ollama
+    # Pass host graphics resources if needed:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  portfolio-backend:
+    build: .
+    container_name: express_core
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - OLLAMA_HOST=http://ollama-engine:11434
+      - PORT=3000
+    depends_on:
+      - ollama-engine
+
+volumes:
+  ollama_cache:
