@@ -1,21 +1,16 @@
-FROM denoland/deno:alpine-2.1.4
+FROM denoland/deno:latest
 
-# Set the working directory inside the container
 WORKDIR /app
 
-# Prefer running as a non-privileged user for container security
-USER deno
+# Copy dependency configs first to leverage caching correctly
+COPY deno.json* deno.lock package.json* ./
 
-# Cache the dependencies first to optimize Docker layer caching
-COPY package.json ./
-# Deno natively reads package.json dependencies and caches them securely
-#RUN deno install
+# Install dependencies using version 5 lockfile specs
+RUN deno install
 
-# Copy the rest of your source code into the working directory
+# Copy the rest of your backend application source files
 COPY . .
 
-# Expose the internal container port
-EXPOSE 3141
+EXPOSE 3000
 
-# Run the entrypoint file directly with necessary security permissions flags
-CMD ["deno","run", "--allow-net", "--allow-env"]
+CMD ["run", "--allow-net","--allow-read", "--allow-env", "main.ts"]
