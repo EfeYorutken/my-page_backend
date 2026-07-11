@@ -9,7 +9,7 @@ USER deno
 # Cache the dependencies first to optimize Docker layer caching
 COPY package.json ./
 # Deno natively reads package.json dependencies and caches them securely
-RUN deno install
+#RUN deno install
 
 # Copy the rest of your source code into the working directory
 COPY . .
