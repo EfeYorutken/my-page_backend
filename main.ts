@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
 import Groq from 'npm:groq-sdk';
+import cors from 'cors';
 
 const app = express();
 const groq = new Groq({ apiKey: Deno.env.get("GROQ_API_KEY") });
@@ -7,6 +8,11 @@ const groq = new Groq({ apiKey: Deno.env.get("GROQ_API_KEY") });
 const PORT = 3141;
 
 app.use(express.json());
+app.use(cors({
+  origin: '*', // Allows your Netlify frontend to communicate with Render
+  methods: ['POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type']
+}));
 
 const secure_prompt = async(query: string, language: string = 'en') => {
 
