@@ -1,9 +1,23 @@
-import express, { Request, Response } from 'express';
+import express from 'express';
 import Groq from 'npm:groq-sdk';
 import cors from 'cors';
 
 const app = express();
 const groq = new Groq({ apiKey: Deno.env.get("GROQ_API_KEY") });
+
+const MODEL = Deno.env.get("GROQ_MODEL") ?? "openai/gpt-oss-20b";
+
+interface QueryRequest {
+  body: { query: string; language?: string };
+}
+
+interface QueryResponse {
+  headersSent: boolean;
+  write(chunk: string): unknown;
+  end(): unknown;
+  status(code: number): QueryResponse;
+  json(body: unknown): unknown;
+}
 
 const PORT = 3141;
 
@@ -25,7 +39,7 @@ const secure_prompt = async(query: string, language: string = 'en') => {
   return query + system;
 }
 
-app.post("/query",async(req : Request, res : Response)=>{
+app.post("/query",async(req: QueryRequest, res: QueryResponse)=>{
 
 
   console.log(req.body);
@@ -35,23 +49,35 @@ app.post("/query",async(req : Request, res : Response)=>{
   //const language = req.body.language;
   const prompt2run = await secure_prompt(req.body.query, req.body.language);
 
-  const stream = await groq.chat.completions.create({
+  try {
+    const stream = await groq.chat.completions.create({
 
-    model: "llama-3.1-8b-instant", // High-speed processing target model on Groq
-    messages: [{ role: "user", content: prompt2run }],
-    stream: true,
+      model: MODEL, // Overridable via GROQ_MODEL; defaults to the Llama 3.1 8B replacement
+      messages: [{ role: "user", content: prompt2run }],
+      stream: true,
 
-  });
+    });
 
-  for await (const chunk of stream) {
-    const textChunk = chunk.choices[0]?.delta?.content || "";
-    if (textChunk) {
-      res.write(textChunk);
+    for await (const chunk of stream) {
+      const textChunk = chunk.choices[0]?.delta?.content || "";
+      if (textChunk) {
+        res.write(textChunk);
+      }
+    }
+
+    console.log('responce sent');
+    res.end();
+  } catch (error) {
+    console.error(`Groq request failed for model "${MODEL}":`, error);
+
+    const detail = error instanceof Error ? error.message : String(error);
+
+    if (res.headersSent) {
+      res.end();
+    } else {
+      res.status(502).json({ error: "AI provider request failed", detail });
     }
   }
-
-  console.log('responce sent');
-  res.end();
 
 });
 
